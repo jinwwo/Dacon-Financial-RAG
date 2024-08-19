@@ -1,30 +1,31 @@
-from get_embeddings import get_embeddings
-from utils import get_bm25_retriever
-from load_model import load_model
-from create_db import load_documents, split_documents, chunk_group_by_source
-
-import os
-import json
 import argparse
-import pandas as pd
-from tqdm import tqdm
-from typing import List, Dict
+import json
+import os
+from typing import Dict, List
 
-from langchain_chroma import Chroma
+import pandas as pd
 from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers import EnsembleRetriever
+from langchain_chroma import Chroma
+from tqdm import tqdm
+
+from create_db import (chunk_group_by_source, load_documents, process_pdfs,
+                       split_documents)
+from get_embeddings import get_embeddings
+from load_model import load_model
+from utils import get_kiwi_bm25_retriever, load_prompt
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 
-DEFAULT_CONFIG_PATH = "./config.json"
+_DEFAULT_PROMPT_PATH = "/home/jinuman/rag/prompt.txt"
 
 
 def rag(data_path: str, source_path: str, chroma_path: str) -> List[Dict[str, str]]:
     df = pd.read_csv(data_path)
     model = load_model(quantization=False)
     retrievers = load_retrievers(df, source_path, chroma_path)
-    prompt_template = load_config["PROMPT_TEMPLATE"]
-
+    prompt_template_str = load_prompt(_DEFAULT_PROMPT_PATH)
+    
     results = []
 
     for _, row in tqdm(df.iterrows(), total=len(df), desc="Answering Questions"):
@@ -35,7 +36,7 @@ def rag(data_path: str, source_path: str, chroma_path: str) -> List[Dict[str, st
         contexts = retriever.invoke(question)
         context_text = "\n\n---\n\n".join([doc.page_content for doc in contexts])
 
-        prompt_template = ChatPromptTemplate.from_template(prompt_template)
+        prompt_template = ChatPromptTemplate.from_template(prompt_template_str)
         prompt = prompt_template.format(context=context_text, question=question)
 
         print(f"Question: {question}")
@@ -66,29 +67,22 @@ def load_retrievers(
 ) -> Dict[str, EnsembleRetriever]:
     retrievers = {}
 
-    documents = load_documents(source_path)
-    chunkenized_text = split_documents(documents)
-    chunks = chunk_group_by_source(chunkenized_text)
+    chunks = process_pdfs(source_path)
     sources = df["Source"].unique()
 
     for source in tqdm(sources, desc="Loading retrievers"):
         db = get_db(source, chroma_path)
-        bm25_retriever = get_bm25_retriever(chunks, source)
+        kiwi_bm25_retriever = get_kiwi_bm25_retriever(chunks, source)
         chroma_retriever = db.as_retriever(
             search_type="mmr", search_kwargs={"k": 5, "fetch_k": 8}
         )
         retriever = EnsembleRetriever(
-            retrievers=[bm25_retriever, chroma_retriever], weights=[0.5, 0.5]
+            retrievers=[kiwi_bm25_retriever, chroma_retriever],
+            weights=[0.5, 0.5]
         )
         retrievers[source] = retriever
 
     return retrievers
-
-
-def load_config(config_path: str) -> Dict[str, str]:
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = json.load(f)
-    return config
 
 
 def main():
