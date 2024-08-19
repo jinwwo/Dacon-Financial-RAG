@@ -1,16 +1,17 @@
-from get_embeddings import get_embeddings
-
 import argparse
 import os
-import sys
 import shutil
-from tqdm import tqdm
-from typing import Tuple, List, Dict, Optional
+import sys
+from typing import Dict, List, Optional, Tuple
 
-from langchain_community.document_loaders import PyPDFDirectoryLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.schema.document import Document
 from langchain_chroma import Chroma
+from langchain_community.document_loaders import PyPDFDirectoryLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from tqdm import tqdm
+
+from get_embeddings import get_embeddings
+from parsing import parsing
 
 
 def main():
@@ -23,7 +24,7 @@ def main():
     args = parser.parse_args()
 
     if args.reset_path:
-        clear_database(args.reset)
+        clear_database(args.reset_path)
 
     if not args.source_path or not args.db_path:
         parser.error(
@@ -60,13 +61,18 @@ def chunk_group_by_source(
 
 
 def load_documents(source_path: str) -> List[Document]:
-    document_loader = PyPDFDirectoryLoader(source_path)
-    return document_loader.load()
+    document = []
+    pdf_name_list = os.listdir(source_path)
+    pdf_path_list = [os.path.join(source_path, pdf) for pdf in pdf_name_list]
+    for pdf_path in pdf_path_list:
+        doc = parsing(pdf_path=pdf_path)
+        document.extend(doc)
+    return document
 
 
 def split_documents(
     documents: List[Document],
-    chunk_size: Optional[int] = 500,
+    chunk_size: Optional[int] = 512,
     chunk_overlap: Optional[int] = 50,
 ) -> List[Document]:
     text_splitter = RecursiveCharacterTextSplitter(
@@ -104,7 +110,7 @@ def add_to_chroma(
         chunks: List[Document], chroma_base_path: str, pdf_name: str
 ) -> None:
     chroma_path = os.path.join(chroma_base_path, pdf_name)
-    db = Chroma(persist_directory=chroma_path, embedding_function=get_embeddings(device='cpu'))
+    db = Chroma(persist_directory=chroma_path, embedding_function=get_embeddings())
 
     chunks_with_ids = calculate_chunk_ids(chunks)
     existing_items = db.get(include=[])
