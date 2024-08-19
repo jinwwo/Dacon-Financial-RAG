@@ -1,32 +1,27 @@
 import os
-import unicodedata
 import pickle
-from typing import List, Optional
+import unicodedata
+from typing import Dict, List, Optional
 
-from langchain_community.document_transformers import LongContextReorder
-from langchain_community.retrievers import BM25Retriever
 from langchain.schema.document import Document
+from langchain_community.document_transformers import LongContextReorder
+from langchain_teddynote.retrievers import KiwiBM25Retriever
 
 
-def get_bm25_retriever(
+def get_kiwi_bm25_retriever(
         chunks: List[Document], 
         source: List[str],
         k: Optional[int] = 5
-) -> BM25Retriever:
+) -> KiwiBM25Retriever:
     for _, chunk in chunks.items():
         current_pdf_name = os.path.splitext(os.path.basename(chunk[0].metadata['source']))[0]
         if current_pdf_name == source:
-            retriever = BM25Retriever.from_documents(chunk)
+            retriever = KiwiBM25Retriever.from_documents(chunk)
             retriever.k = k
             return retriever
         
-
-def save_retrievers(retrievers, file_path):
-    with open(file_path, 'wb') as file:
-        pickle.dump(retrievers, file)
-
-
-def load_saved_retrievers(file_path):
-    with open(file_path, 'rb') as file:
-        retrievers = pickle.load(file)
-    return retrievers
+        
+def load_prompt(prompt_path: str) -> Dict[str, str]:
+    with open(prompt_path, 'r', encoding='utf-8') as file:
+        PROMPT_TEMPLATE = file.read()
+    return PROMPT_TEMPLATE
