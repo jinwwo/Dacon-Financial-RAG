@@ -15,7 +15,6 @@ def get_embeddings(
         model_name=_DEFAULT_MODEL_ID,
         model_kwargs=model_kwargs,
         encode_kwargs=encode_kwargs,
-        cache_folder='/home/jinuman/rag/models/models--BAAI--bge-m3'
     )
     
     return embeddings
