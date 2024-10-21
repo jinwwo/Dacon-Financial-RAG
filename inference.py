@@ -9,11 +9,10 @@ from langchain.retrievers import EnsembleRetriever
 from langchain_chroma import Chroma
 from tqdm import tqdm
 
-from create_db import (chunk_group_by_source, load_documents, process_pdfs,
-                       split_documents)
-from get_embeddings import get_embeddings
-from load_model import load_model
-from utils import get_kiwi_bm25_retriever, load_prompt
+from .data.create_db import process_pdfs
+from .model.get_embeddings import get_embeddings
+from .model.load_model import load_model
+from .utils.utils import get_kiwi_bm25_retriever, load_prompt
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 
