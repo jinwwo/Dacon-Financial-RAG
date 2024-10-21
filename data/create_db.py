@@ -10,7 +10,7 @@ from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from tqdm import tqdm
 
-from get_embeddings import get_embeddings
+from ..model.get_embeddings import get_embeddings
 from parsing import parsing
 
 
