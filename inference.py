@@ -16,7 +16,7 @@ from .utils.utils import get_kiwi_bm25_retriever, load_prompt
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 
-_DEFAULT_PROMPT_PATH = "/home/jinuman/rag/prompt.txt"
+_DEFAULT_PROMPT_PATH = "prompt.txt"
 
 
 def rag(data_path: str, source_path: str, chroma_path: str) -> List[Dict[str, str]]:
