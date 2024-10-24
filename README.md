@@ -26,7 +26,7 @@ python inference.py --data_path "PATH_OF_TEST_CSV" --source_path "ROOT_PATH_OF_S
 
 # Features
 ### parsing.py
-1. The existing parsing library simply reads documents, so it cannot utilize the table information from the data. Therefore, Camelot is used to convert the data into Markdown format, and text extraction is done via pdfplumber.
+1. The existing parsing library simply reads documents, so it cannot utilize the table information from the data. Therefore, Camelot is used to convert the tables into Markdown format, and text extraction is done via pdfplumber.
 2. Some documents in the dataset had a 2-column (2 up layout) format. To handle this, an algorithm was implemented to parse the document from the top left to the bottom right.
 
 ### utils.py
